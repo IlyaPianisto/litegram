@@ -4,3 +4,4 @@ sessions/
 *.session
 .venv/
 __pycache__/
+.idea/

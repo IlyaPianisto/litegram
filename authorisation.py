@@ -14,7 +14,6 @@ API_HASH = os.getenv("API_HASH")
 
 
 def get_key(pin, salt):
-    # Превращаем короткий ПИН в надежный 32-байтный ключ
     return PBKDF2(pin, salt, dkLen=32, count=100000)
 
 def encrypt_session(session_string, pin):
@@ -45,13 +44,11 @@ async def main():
         os.makedirs('sessions')
 
     phone = input("Введите номер телефона (+7...): ").strip()
-    # Убираем плюсик для имени файла
     safe_phone = phone.replace("+", "")
     session_file = f"sessions/{safe_phone}.enc"
 
     session_string = ""
 
-    # Проверяем, есть ли уже зашифрованный файл для этого номера
     if os.path.exists(session_file):
         print("Найдена сохраненная сессия для этого номера.")
         pin = input("Введите ваш ПИН-код для входа: ")
@@ -67,11 +64,9 @@ async def main():
             print("Ошибка: Неверный ПИН-код! Доступ запрещен.")
             return
 
-    # Запускаем клиент Телеграма. Если session_string пустая - попросит код
     client = TelegramClient(StringSession(session_string), API_ID, API_HASH)
     await client.connect()
 
-    # Если мы еще не авторизованы (например, первый вход)
     if not await client.is_user_authorized():
         print("Сессия пуста. Начинаем первичную авторизацию...")
         await client.send_code_request(phone)
@@ -85,7 +80,6 @@ async def main():
 
         print("SUCCESS! Успешный вход.")
 
-        # Получаем строковую сессию, просим юзера придумать ПИН и шифруем
         new_session_string = client.session.save()
         new_pin = input("Придумайте ПИН-код для защиты вашей сессии на сервере: ")
         encrypted_new = encrypt_session(new_session_string, new_pin)
