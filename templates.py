@@ -29,3 +29,130 @@ def login_form(error: str = "") -> str:
         "</form>"
     )
     return page("Вход", body)
+
+def code_form(phone: str, error: str) -> str:
+    err = f"<p><b>{error}</b></p>" if error else ""
+    body = (
+        err
+        + f"<p>Код отправлен на {phone}</p>"
+        "form method: 'post' action='auth/code'"
+        "<p>Код из Telegram:<br>"
+        "<input type='text' name = 'code' maxlength ='8'> </p>"
+        "<p><input type='submit' value='OK></p>"
+        "</form>"
+    )
+    return page("Введите код", body)
+
+def password_form(error:str) -> str:
+    err = f"<p><b>{error}</b></p>" if error else ""
+    body = (
+            err
+            +"<p>Введите пароль от Telegram:</p>"
+            "form method: 'post' action='auth/password'"
+            "<p> input name='password' type='password'</p>"
+            "<p><input type = 'submit' value='OK'> </p>"
+            "</form>"
+    )
+    return page("Введите пароль", body)
+
+def pin_create_form(error: str) -> str:
+    err = f"<p><b>{error}</b></p>" if error else ""
+    body = (
+        err
+        +"<p>Придумайте Pin-код для доступа к Litegram<p>"
+        "form method: 'post' action='auth/create_pin'>"
+        "<p>PIN (4 цифры): <br>"
+        "<input type = 'password' name = 'pin' maxlength='4' minlength='4'></p>"
+        "<p>Повторите PIN:<br>"
+        "<input type = 'password' name = 'pin2' maxlength='4' minlength='4'></p>"
+        "<p><input type = 'submit' value='OK'> </p>"
+        "</form>"
+    )
+    return page("Создать PIN", body)
+
+def pin_enter_form(error: str) -> str:
+    err = f"<p><b>{error}</b></p>" if error else ""
+    body = (
+        err
+        +"<p>Введите Pin-код для входа </p>"
+        "form method: 'post' action='auth/pin_enter'>"
+        "<input type = 'password' name = 'pin' maxlength='4' minlength='4'></p>"
+        "<p><input type = 'submit' value='OK'> </p>"
+        "</form>"
+    )
+    return page("Введи PIN", body)
+
+def chats_lists(dialogs: list, tab: str = "all") -> str: #Вернуться ещё
+    tabs = (
+        '<div class="tabs">'
+        f'<a href ="/chats?tabs-all" accessKey="1"{"["if tab =="all" else "" } Все{"}" if tab == "all" else ""}</a>'
+    )
+    rows = []
+    for dialog in dialogs:
+        cls = "row unread" if dialog["unread"] else "row"
+        unread_mark = f'[{dialog["unread"]}]' if dialog["unread"] else ''
+        rows.append(
+            f'<div class="{cls}">'
+            f'<a href="/chat/{dialog["id"]}">{dialog["name"]}{unread_mark}</a><br>'
+            f'<span class="dim">{dialog["last_msg"][:20] if dialog["last_msg"] else ""}'
+            f'{"  " + dialog["date"] if dialog["date"] else ""}</span>'
+            f'</div>'
+        )
+
+    nav = ""
+
+    body = tabs + "\n".join(rows) if rows else tabs + "<p>Нет диалогов</p>"
+    return page("Чаты", body, nav)
+
+def chat_view(chat_id: int, title: str, messages: list, offset: int = 0) -> str:
+    rows = []
+    for m in messages:
+        cls = "bubble me" if m["is_me"] else "bubble"
+        media_html = ""
+
+        if m["media_type"] == "photo":
+            media_html = (
+                f'<br><a href="{m["media_url"]}">'
+                f'<img src="{m["thumb_url"]}" alt="фото" width="80"></a>'
+            )
+
+        elif m["media_type"] == "video":
+            if m.get("thumb_url"):
+                media_html = (
+                    f'<br>img src="{m["thumb_url"]}" alt="видео" width="80">'
+                )
+            media_html += f'<a href="{m["media_url"]}">Скачать видео</a>'
+
+        elif m["media_type"] == ["audio", "voice"]:
+            media_html = f'<br><a href="{m["media_url"]}"> Скачать аудио</a>'
+
+        elif m["media_type"] == "file":
+            media_html = f'<br><a href="{m["media_url"]}"> Скачать файл</a>'
+
+        rows.append(
+            f'<div class="{cls}">'
+            f'<span class="dim">{m["sender"]} {m["time"]}</span><br>'
+            + (m["text"] or "")
+            + media_html
+            + "</div>"
+        )
+
+    load_more = ""
+    if len(messages) >= 10:
+        new_offset = offset + 10
+        load_more = (
+            f'<p><a href="/chat/{chat_id}?offset={new_offset}">'
+            "Загрузить ещё</a></p>"
+        )
+
+    send_form = {
+        "<form method='post' action='/send'"
+        f"<input type = 'hidden' name='chat_id' value='{chat_id}'>"
+        "<textarea name='text' rows='2' cols='22'></textarea><br>"
+        "<input type = 'submit' value='->'> </form>"
+    }
+
+    nav = f"<a href='/chats'> Назад </a> {title}"
+    body = "\n".join(rows) + load_more + send_form
+
+    return page(title, body, nav)
