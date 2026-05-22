@@ -156,3 +156,7 @@ def chat_view(chat_id: int, title: str, messages: list, offset: int = 0) -> str:
     body = "\n".join(rows) + load_more + send_form
 
     return page(title, body, nav)
+
+def error_page(msg: str, back: str = "/", back_label: str = "Назад") -> str:
+    body = f"<p>{msg}</p><a href='{back}'>{back_label}</a>"
+    return page("Ошибка", body)
